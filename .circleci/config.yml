@@ -1,0 +1,50 @@
+version: 2.1
+
+executors:
+    ubuntu_executor:
+        docker:
+            - image: ubuntu:18.04
+
+workflows:
+    "Linting And Static Analysis":
+        jobs:
+            - cpp_linter
+            - cpp_static_analysis
+            - commit_linting
+            
+jobs:
+    cpp_linter:
+        executor: ubuntu_executor
+        steps:
+            - checkout
+            - run:
+                name: install clang and clang-format
+                command: apt-get update -q && apt-get install clang clang-format -y
+            - run:
+                name: lint the C++ Code
+                command: find ./ -iname *.hpp -o -iname *.cpp | xargs clang-format
+
+    cpp_static_analysis:
+        executor: ubuntu_executor
+        steps:
+            - checkout
+            - run:
+                name: install clang and clang-tidy
+                command: apt-get update -q && apt-get install clang clang-tidy -y
+            - run:
+                name: analyze the C++ code
+                command: find ./ -iname *.hpp -o -iname *.cpp | xargs clang-tidy
+
+    commit_linting:
+        executor: ubuntu_executor
+        steps:
+            - checkout
+            - run:
+                name: install npm
+                command: apt-get update -q && apt-get install nodejs npm git -y
+            - run:
+                name: install commitlint and conventional commit
+                command: npm install @commitlint/cli -g && npm install @commitlint/config-conventional
+            - run:
+                name: lint commits
+                command: git log | commitlint --from 4dd5b298cec3db74ccd1b8d623be7f0afc567325
